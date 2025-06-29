@@ -7,6 +7,22 @@ from ..services.flagging import flag_abnormal
 
 lab_test_bp = Blueprint('lab_test', __name__)
 
+
+@lab_test_bp.route('/<int:patient_id>', methods=['GET'])
+@jwt_required()
+def get_tests_for_patient(patient_id):
+    tests = LabTest.query.filter_by(patient_id=patient_id).all()
+    results = [
+        {
+            "id": t.id,
+            "type": t.test_type,
+            "values": t.result_values,
+            "flagged": t.flagged,
+            "date": t.date_conducted
+        } for t in tests
+    ]
+    return jsonify(results), 200
+
 @lab_test_bp.route('/', methods=['POST'])
 @jwt_required()
 def create_test():
