@@ -1,0 +1,45 @@
+.reference-range-manager {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.add-range-form {
+  background: #f5f5f5;
+  padding: 20px;
+  margin-bottom: 30px;
+  border-radius: 8px;
+}
+
+.add-range-form input,
+.add-range-form select {
+  margin-right: 10px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.add-range-form button {
+  padding: 8px 15px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ranges-list table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ranges-list th,
+.ranges-list td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.ranges-list th {
+  background-color: #f2f2f2;
+}

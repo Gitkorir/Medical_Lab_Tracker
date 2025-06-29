@@ -3,6 +3,7 @@ from .config import Config
 from .extensions import db, migrate, jwt
 from .models import *  # Ensures models are imported during migration
 from .routes import register_routes
+from flask_cors import CORS
 
 def create_app():
     app = Flask(__name__)
@@ -13,5 +14,7 @@ def create_app():
     jwt.init_app(app)
 
     register_routes(app)
+    CORS(app)
+    
 
     return app

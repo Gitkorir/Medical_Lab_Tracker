@@ -8,6 +8,7 @@ class TestReferenceRange(db.Model):
     parameter = db.Column(db.String, nullable=False)          # e.g., hemoglobin, ALT
     min_value = db.Column(db.Float, nullable=True)
     max_value = db.Column(db.Float, nullable=True)
+  
 
     def __repr__(self):
         return f"<Range {self.test_type} - {self.parameter}: {self.min_value}-{self.max_value}>"
