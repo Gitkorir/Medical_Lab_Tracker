@@ -78,3 +78,44 @@ def get_patient(patient_id):
         "gender": patient.gender,
         "created_by": patient.created_by
     }), 200
+@patient_bp.route('/<int:patient_id>', methods=['PUT'])
+@jwt_required()
+def update_patient(patient_id):
+    current_user = get_jwt_identity()
+    data = request.get_json()
+
+    patient = Patient.query.filter_by(id=patient_id, created_by=current_user["id"]).first()
+    if not patient:
+        return jsonify({"msg": "Patient not found"}), 404
+
+    # Update fields if provided
+    patient.name = data.get("name", patient.name)
+    patient.dob = data.get("dob", patient.dob)
+    patient.gender = data.get("gender", patient.gender)
+
+    db.session.commit()
+
+    return jsonify({
+        "msg": "Patient updated successfully",
+        "patient": {
+            "id": patient.id,
+            "name": patient.name,
+            "dob": str(patient.dob),
+            "gender": patient.gender
+        }
+    }), 200
+
+@patient_bp.route('/<int:patient_id>', methods=['DELETE'])
+@jwt_required()
+def delete_patient(patient_id):
+    current_user = get_jwt_identity()
+
+    patient = Patient.query.filter_by(id=patient_id, created_by=current_user["id"]).first()
+    if not patient:
+        return jsonify({"msg": "Patient not found"}), 404
+
+    db.session.delete(patient)
+    db.session.commit()
+
+    return jsonify({"msg": f"Patient '{patient.name}' deleted successfully."}), 200
+
