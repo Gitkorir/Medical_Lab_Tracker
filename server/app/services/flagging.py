@@ -1,26 +1,18 @@
+from app.models.test_reference_range import TestReferenceRange
+
 def flag_abnormal(test_type, values):
-    """
-    Returns True if the test result is abnormal, False otherwise.
-    Extend logic per test_type.
-    """
-    if test_type == "CBC":
-        hb = values.get("hemoglobin")
-        wbc = values.get("wbc")
+    flagged = False
 
-        if hb is not None and (hb < 13.5 or hb > 17.5):
-            return True
-        if wbc is not None and (wbc < 4.0 or wbc > 11.0):
-            return True
+    for parameter, actual_value in values.items():
+        if isinstance(actual_value, str):  # Non-numeric (e.g., COVID-19)
+            if test_type == "COVID-19" and actual_value.lower() == "positive":
+                return True
+            continue
 
-    elif test_type == "Cholesterol":
-        ldl = values.get("ldl")
-        hdl = values.get("hdl")
+        ref = TestReferenceRange.query.filter_by(test_type=test_type, parameter=parameter).first()
+        if ref:
+            if (ref.min_value is not None and actual_value < ref.min_value) or \
+               (ref.max_value is not None and actual_value > ref.max_value):
+                flagged = True
 
-        if ldl and ldl > 130:
-            return True
-        if hdl and hdl < 40:
-            return True
-
-    # Add more tests here...
-    
-    return False
+    return flagged
