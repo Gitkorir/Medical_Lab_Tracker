@@ -5,6 +5,7 @@ import NavBar from "./components/NavBar";
 import LoginPage from "./components/LoginPage";
 import ReferenceRangeManager from "./components/ReferenceRangeManager";
 import TestResultForm from "./components/TestResultForm";
+import PatientDashboard from "./components/PatientDashboard";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -38,6 +39,10 @@ function App() {
           <Route
             path="/reference-ranges"
             element={isLoggedIn ? <ReferenceRangeManager /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/dashboard"
+            element={isLoggedIn ? <PatientDashboard /> : <Navigate to="/login" />}
           />
           <Route
             path="/add-test"

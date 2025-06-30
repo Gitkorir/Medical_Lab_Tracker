@@ -5,61 +5,80 @@ from ..models.patient import Patient
 
 patient_bp = Blueprint('patient', __name__)
 
-@patient_bp.route('/', methods=['POST'])
-@jwt_required()
-def create_patient():
-    data = request.get_json()
-    name = data.get("name")
-    dob = data.get("dob")
-    gender = data.get("gender")
 
-    if not all([name, dob, gender]):
-        return jsonify({"msg": "Missing required fields"}), 400
-
-    # Get the current logged-in user's ID
-    user = get_jwt_identity()
-    created_by = user["id"]
-
-    patient = Patient(
-        name=name,
-        dob=dob,
-        gender=gender,
-        created_by=created_by
-    )
-
-    db.session.add(patient)
-    db.session.commit()
-
-    return jsonify({
-        "msg": "Patient created successfully",
-        "patient": {
-            "id": patient.id,
-            "name": patient.name,
-            "dob": str(patient.dob),
-            "gender": patient.gender,
-            "created_by": patient.created_by
-        }
-    }), 201
-# ✅ GET: List all patients for the logged-in user
+# ✅ GET: List patients (optionally filtered by user)
 @patient_bp.route('/', methods=['GET'])
-@jwt_required()
+@jwt_required(optional=True)
 def get_patients():
-    user = get_jwt_identity()
-    user_id = user["id"]
+    try:
+        current_user = get_jwt_identity()
+        
+        if current_user:
+            user_id = current_user.get("id") if isinstance(current_user, dict) else current_user
+            patients = Patient.query.filter_by(created_by=user_id).all()
+        else:
+            patients = Patient.query.all()
+        
+        result = []
+        for p in patients:
+            result.append({
+                "id": p.id,
+                "name": p.name,
+                "dob": str(p.dob),
+                "gender": p.gender,
+                "created_by": getattr(p, 'created_by', None)
+            })
 
-    patients = Patient.query.filter_by(created_by=user_id).all()
-    result = []
-    for p in patients:
-        result.append({
-            "id": p.id,
-            "name": p.name,
-            "dob": str(p.dob),
-            "gender": p.gender,
-            "created_by": p.created_by
-        })
+        return jsonify(result), 200
+        
+    except Exception as e:
+        print(f"Get patients error: {str(e)}")
+        return jsonify({"error": "Failed to fetch patients"}), 500
 
-    return jsonify(result), 200
 
+# ✅ POST: Create new patient
+@patient_bp.route('/', methods=['POST'])
+@jwt_required(optional=True)
+def create_patient():
+    try:
+        data = request.get_json()
+        name = data.get("name")
+        dob = data.get("dob")
+        gender = data.get("gender")
+
+        if not all([name, dob, gender]):
+            return jsonify({"error": "Missing required fields: name, dob, gender"}), 400
+
+        current_user = get_jwt_identity()
+        created_by = current_user.get("id") if isinstance(current_user, dict) else current_user
+
+        patient = Patient(
+            name=name,
+            dob=dob,
+            gender=gender,
+            created_by=created_by
+        )
+
+        db.session.add(patient)
+        db.session.commit()
+
+        return jsonify({
+            "message": "Patient created successfully",
+            "data": {
+                "id": patient.id,
+                "name": patient.name,
+                "dob": str(patient.dob),
+                "gender": patient.gender,
+                "created_by": patient.created_by
+            }
+        }), 201
+
+    except Exception as e:
+        print(f"Create patient error: {str(e)}")
+        return jsonify({"error": "Failed to create patient"}), 500
+
+
+# ✅ GET: One patient by ID
 @patient_bp.route('/<int:patient_id>', methods=['GET'])
 @jwt_required()
 def get_patient(patient_id):
@@ -78,6 +97,9 @@ def get_patient(patient_id):
         "gender": patient.gender,
         "created_by": patient.created_by
     }), 200
+
+
+# ✅ PUT: Update a patient
 @patient_bp.route('/<int:patient_id>', methods=['PUT'])
 @jwt_required()
 def update_patient(patient_id):
@@ -88,7 +110,6 @@ def update_patient(patient_id):
     if not patient:
         return jsonify({"msg": "Patient not found"}), 404
 
-    # Update fields if provided
     patient.name = data.get("name", patient.name)
     patient.dob = data.get("dob", patient.dob)
     patient.gender = data.get("gender", patient.gender)
@@ -105,6 +126,8 @@ def update_patient(patient_id):
         }
     }), 200
 
+
+# ✅ DELETE: Remove a patient
 @patient_bp.route('/<int:patient_id>', methods=['DELETE'])
 @jwt_required()
 def delete_patient(patient_id):
@@ -119,3 +142,8 @@ def delete_patient(patient_id):
 
     return jsonify({"msg": f"Patient '{patient.name}' deleted successfully."}), 200
 
+
+# ✅ Optional test route
+@patient_bp.route('/test', methods=['GET'])
+def test_patients():
+    return jsonify({"message": "Patients endpoint is working!", "status": "ok"})

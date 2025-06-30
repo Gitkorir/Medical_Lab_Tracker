@@ -1,105 +1,430 @@
-import React, { useEffect, useState } from 'react';
-import axios from '../api';
+import React, { useState, useEffect, useCallback } from "react";
+import api from "../api";
 
-function ReferenceRangeManager() {
+const ReferenceRangeManager = () => {
+  // Form state
+  const [form, setForm] = useState({
+    parameter: "",
+    normal_min: "",
+    normal_max: "",
+    units: "",
+  });
+
+  // Data state
   const [ranges, setRanges] = useState([]);
-  const [newRange, setNewRange] = useState({ test_type: '', min_value: '', max_value: '', units: '' });
+  const [editingId, setEditingId] = useState(null);
+  
+  // UI state
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const fetchRanges = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/reference_ranges/', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setRanges(response.data);
-    } catch (error) {
-      console.error('Error fetching ranges:', error);
-    }
-  };
-
-  const handleAddRange = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post('/reference_ranges/', newRange, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setNewRange({ test_type: '', min_value: '', max_value: '', units: '' });
-      fetchRanges();
-    } catch (error) {
-      console.error('Error adding range:', error);
-    }
-  };
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    page: 1,
+    per_page: 20,
+    total: 0,
+    pages: 0
+  });
 
   useEffect(() => {
     fetchRanges();
-  }, []);
+  }, [pagination.page, searchTerm]);
+
+  const fetchRanges = useCallback(async () => {
+    try {
+      setLoading(true);
+      setErrors({});
+      
+      const params = {
+        page: pagination.page,
+        per_page: pagination.per_page,
+        ...(searchTerm && { parameter: searchTerm })
+      };
+      
+      const res = await api.get("/reference_ranges/", { params });
+      setRanges(res.data.data);
+      setPagination(prev => ({ ...prev, ...res.data.pagination }));
+      
+    } catch (err) {
+      console.error("❌ Error fetching reference ranges:", err);
+      setErrors({ fetch: "Failed to fetch reference ranges. Please try again." });
+    } finally {
+      setLoading(false);
+    }
+  }, [pagination.page, pagination.per_page, searchTerm]);
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!form.parameter.trim()) newErrors.parameter = "Parameter is required";
+    if (!form.units.trim()) newErrors.units = "Units are required";
+    
+    const normalMin = parseFloat(form.normal_min);
+    const normalMax = parseFloat(form.normal_max);
+    
+    if (isNaN(normalMin) || normalMin < 0) {
+      newErrors.normal_min = "Normal min must be a valid positive number";
+    }
+    if (isNaN(normalMax) || normalMax < 0) {
+      newErrors.normal_max = "Normal max must be a valid positive number";
+    }
+    if (!isNaN(normalMin) && !isNaN(normalMax) && normalMin >= normalMax) {
+      newErrors.normal_max = "Normal max must be greater than normal min";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+    
+    // Clear field-specific error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+    
+    const payload = {
+      parameter: form.parameter.trim(),
+      normal_min: parseFloat(form.normal_min),
+      normal_max: parseFloat(form.normal_max),
+      units: form.units.trim(),
+    };
+
+    try {
+      setSubmitting(true);
+      setErrors({});
+      
+      if (editingId) {
+        await api.put(`/reference_ranges/${editingId}`, payload);
+        setSuccessMessage("Reference range updated successfully!");
+        setEditingId(null);
+      } else {
+        await api.post("/reference_ranges/", payload);
+        setSuccessMessage("Reference range added successfully!");
+      }
+      
+      resetForm();
+      fetchRanges();
+      
+    } catch (err) {
+      console.error("❌ Error saving range:", err);
+      
+      if (err.response?.data?.details) {
+        setErrors(err.response.data.details);
+      } else if (err.response?.data?.error) {
+        setErrors({ submit: err.response.data.error });
+      } else {
+        setErrors({ submit: "Failed to save reference range. Please try again." });
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEdit = (range) => {
+    setForm({
+      parameter: range.parameter,
+      normal_min: range.normal_min.toString(),
+      normal_max: range.normal_max.toString(),
+      units: range.units,
+    });
+    setEditingId(range.id);
+    setErrors({});
+    setSuccessMessage("");
+  };
+
+  const handleDelete = async (id, parameter) => {
+    if (!window.confirm(`Are you sure you want to delete the reference range for ${parameter}?`)) {
+      return;
+    }
+    
+    try {
+      await api.delete(`/reference_ranges/${id}`);
+      setSuccessMessage("Reference range deleted successfully!");
+      fetchRanges();
+    } catch (err) {
+      console.error("❌ Error deleting range:", err);
+      setErrors({ delete: "Failed to delete reference range. Please try again." });
+    }
+  };
+
+  const resetForm = () => {
+    setForm({
+      parameter: "",
+      normal_min: "",
+      normal_max: "",
+      units: "",
+    });
+    setEditingId(null);
+    setErrors({});
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  // Auto-clear success message
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4 text-blue-700">🧪 Manage Test Reference Ranges</h2>
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">
+        Reference Range Management
+      </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-white p-4 shadow rounded">
+      {/* Success Message */}
+      {successMessage && (
+        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+          {successMessage}
+        </div>
+      )}
+
+      {/* Error Message */}
+      {errors.fetch && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          {errors.fetch}
+        </div>
+      )}
+
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="bg-white p-6 shadow-lg rounded-lg mb-8">
+        <h3 className="text-lg font-semibold mb-4">
+          {editingId ? "Edit Reference Range" : "Add New Reference Range"}
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Parameter *
+            </label>
+            <input
+              type="text"
+              name="parameter"
+              value={form.parameter}
+              onChange={handleChange}
+              placeholder="e.g., Hemoglobin"
+              className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.parameter ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
+              disabled={submitting}
+            />
+            {errors.parameter && (
+              <p className="text-red-500 text-xs mt-1">{errors.parameter}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Units *
+            </label>
+            <input
+              type="text"
+              name="units"
+              value={form.units}
+              onChange={handleChange}
+              placeholder="e.g., g/dL"
+              className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.units ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
+              disabled={submitting}
+            />
+            {errors.units && (
+              <p className="text-red-500 text-xs mt-1">{errors.units}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Normal Min *
+            </label>
+            <input
+              type="number"
+              name="normal_min"
+              value={form.normal_min}
+              onChange={handleChange}
+              placeholder="0.0"
+              step="0.01"
+              min="0"
+              className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.normal_min ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
+              disabled={submitting}
+            />
+            {errors.normal_min && (
+              <p className="text-red-500 text-xs mt-1">{errors.normal_min}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Normal Max *
+            </label>
+            <input
+              type="number"
+              name="normal_max"
+              value={form.normal_max}
+              onChange={handleChange}
+              placeholder="0.0"
+              step="0.01"
+              min="0"
+              className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.normal_max ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
+              disabled={submitting}
+            />
+            {errors.normal_max && (
+              <p className="text-red-500 text-xs mt-1">{errors.normal_max}</p>
+            )}
+          </div>
+        </div>
+
+        {errors.submit && (
+          <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {errors.submit}
+          </div>
+        )}
+
+        <div className="flex gap-3 mt-6">
+          <button
+            type="submit"
+            disabled={submitting}
+            className={`px-6 py-2 rounded-md text-white font-medium transition-colors ${
+              submitting
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+          >
+            {submitting ? 'Saving...' : editingId ? 'Update Range' : 'Add Range'}
+          </button>
+          
+          {editingId && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              disabled={submitting}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
+
+      {/* Search */}
+      <div className="mb-4">
         <input
           type="text"
-          placeholder="Test Type"
-          className="border p-2 rounded"
-          value={newRange.test_type}
-          onChange={(e) => setNewRange({ ...newRange, test_type: e.target.value })}
+          placeholder="Search parameters..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+          className="w-full md:w-64 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <input
-          type="text"
-          placeholder="Min Value"
-          className="border p-2 rounded"
-          value={newRange.min_value}
-          onChange={(e) => setNewRange({ ...newRange, min_value: e.target.value })}
-        />
-        <input
-          type="text"
-          placeholder="Max Value"
-          className="border p-2 rounded"
-          value={newRange.max_value}
-          onChange={(e) => setNewRange({ ...newRange, max_value: e.target.value })}
-        />
-        <input
-          type="text"
-          placeholder="Units"
-          className="border p-2 rounded"
-          value={newRange.units}
-          onChange={(e) => setNewRange({ ...newRange, units: e.target.value })}
-        />
-        <button
-          onClick={handleAddRange}
-          className="col-span-1 sm:col-span-2 bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-        >
-          ➕ Add Range
-        </button>
       </div>
 
-      <div className="bg-white shadow rounded p-4">
-        <h3 className="text-lg font-semibold mb-2">📋 Current Ranges</h3>
-        <table className="w-full border">
-          <thead>
-            <tr className="bg-gray-100 text-left">
-              <th className="p-2 border">Test</th>
-              <th className="p-2 border">Min</th>
-              <th className="p-2 border">Max</th>
-              <th className="p-2 border">Units</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ranges.map((range) => (
-              <tr key={range.id}>
-                <td className="p-2 border">{range.test_type}</td>
-                <td className="p-2 border">{range.min_value}</td>
-                <td className="p-2 border">{range.max_value}</td>
-                <td className="p-2 border">{range.units}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Reference Ranges List */}
+      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+        <h3 className="text-lg font-semibold p-4 bg-gray-50 border-b">
+          Existing Reference Ranges ({pagination.total})
+        </h3>
+        
+        {loading ? (
+          <div className="p-8 text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-2 text-gray-600">Loading...</p>
+          </div>
+        ) : ranges.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">
+            {searchTerm ? 'No reference ranges found matching your search.' : 'No reference ranges added yet.'}
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parameter</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Range</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Units</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {ranges.map((range) => (
+                    <tr key={range.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium text-gray-900">{range.parameter}</td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {range.normal_min} - {range.normal_max}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{range.units}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEdit(range)}
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(range.id, range.parameter)}
+                            className="text-red-600 hover:text-red-800 text-sm font-medium"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {pagination.pages > 1 && (
+              <div className="px-4 py-3 bg-gray-50 border-t flex items-center justify-between">
+                <div className="text-sm text-gray-700">
+                  Page {pagination.page} of {pagination.pages} 
+                  ({pagination.total} total)
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                    disabled={!pagination.has_prev}
+                    className="px-3 py-1 border rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                    disabled={!pagination.has_next}
+                    className="px-3 py-1 border rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
-}
+};
 
 export default ReferenceRangeManager;

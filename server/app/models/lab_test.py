@@ -6,7 +6,8 @@ class LabTest(db.Model):
     __tablename__ = 'lab_tests'
 
     id = db.Column(db.Integer, primary_key=True)
-    test_type = db.Column(db.String(50), nullable=False)
+    parameter = db.Column(db.String(100), nullable=False, server_default="Pending")
+
     result_values = db.Column(JSON, nullable=False)
     date_conducted = db.Column(db.DateTime, default=datetime.utcnow)
     flagged = db.Column(db.Boolean, default=False)

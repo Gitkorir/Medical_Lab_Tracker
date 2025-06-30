@@ -78,14 +78,14 @@ function TestResultForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium">Test Type</label>
+          <label className="block text-sm font-medium">parameter</label>
           <input
             required
             type="text"
             placeholder="e.g., Hemoglobin"
             className="w-full border p-2 rounded"
             value={form.test_type}
-            onChange={(e) => setForm({ ...form, test_type: e.target.value })}
+            onChange={(e) => setForm({ ...form, parameter: e.target.value })}
           />
         </div>
 
