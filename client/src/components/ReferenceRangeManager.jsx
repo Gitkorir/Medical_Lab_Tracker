@@ -1,95 +1,105 @@
-import React, { useEffect, useState } from "react";
-import api from "../api";
-import './ReferenceRangeManager.css';
+import React, { useEffect, useState } from 'react';
+import axios from '../api';
 
-const ReferenceRangeManager = () => {
+function ReferenceRangeManager() {
   const [ranges, setRanges] = useState([]);
-  const [form, setForm] = useState({ test_type: "", parameter: "", min_value: "", max_value: "" });
-  const [editingId, setEditingId] = useState(null);
+  const [newRange, setNewRange] = useState({ test_type: '', min_value: '', max_value: '', units: '' });
+
+  const fetchRanges = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/reference_ranges/', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setRanges(response.data);
+    } catch (error) {
+      console.error('Error fetching ranges:', error);
+    }
+  };
+
+  const handleAddRange = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('/reference_ranges/', newRange, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNewRange({ test_type: '', min_value: '', max_value: '', units: '' });
+      fetchRanges();
+    } catch (error) {
+      console.error('Error adding range:', error);
+    }
+  };
 
   useEffect(() => {
     fetchRanges();
   }, []);
 
-  const fetchRanges = async () => {
-    const res = await api.get("/reference_ranges/");
-    setRanges(res.data);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (editingId) {
-      await api.put(`/reference_ranges/${editingId}`, form);
-    } else {
-      await api.post("/reference_ranges/", form);
-    }
-    setForm({ test_type: "", parameter: "", min_value: "", max_value: "" });
-    setEditingId(null);
-    fetchRanges();
-  };
-
-  const handleEdit = (range) => {
-    setForm(range);
-    setEditingId(range.id);
-  };
-
-  const handleDelete = async (id) => {
-    await api.delete(`/reference_ranges/${id}`);
-    fetchRanges();
-  };
-
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h2 className="text-xl font-bold mb-4">🧑‍⚕️ Reference Range Admin</h2>
+      <h2 className="text-2xl font-bold mb-4 text-blue-700">🧪 Manage Test Reference Ranges</h2>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4 mb-6">
-        {["test_type", "parameter", "min_value", "max_value"].map((field) => (
-          <input
-            key={field}
-            type={field.includes("value") ? "number" : "text"}
-            step="any"
-            placeholder={field.replace("_", " ")}
-            value={form[field]}
-            onChange={(e) => setForm({ ...form, [field]: e.target.value })}
-            className="border p-2 rounded"
-          />
-        ))}
-        <button type="submit" className="col-span-2 bg-blue-600 text-white p-2 rounded">
-          {editingId ? "Update Range" : "Add Range"}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-white p-4 shadow rounded">
+        <input
+          type="text"
+          placeholder="Test Type"
+          className="border p-2 rounded"
+          value={newRange.test_type}
+          onChange={(e) => setNewRange({ ...newRange, test_type: e.target.value })}
+        />
+        <input
+          type="text"
+          placeholder="Min Value"
+          className="border p-2 rounded"
+          value={newRange.min_value}
+          onChange={(e) => setNewRange({ ...newRange, min_value: e.target.value })}
+        />
+        <input
+          type="text"
+          placeholder="Max Value"
+          className="border p-2 rounded"
+          value={newRange.max_value}
+          onChange={(e) => setNewRange({ ...newRange, max_value: e.target.value })}
+        />
+        <input
+          type="text"
+          placeholder="Units"
+          className="border p-2 rounded"
+          value={newRange.units}
+          onChange={(e) => setNewRange({ ...newRange, units: e.target.value })}
+        />
+        <button
+          onClick={handleAddRange}
+          className="col-span-1 sm:col-span-2 bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+        >
+          ➕ Add Range
         </button>
-      </form>
+      </div>
 
-      <table className="w-full text-left border border-collapse">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">Test Type</th>
-            <th className="border p-2">Parameter</th>
-            <th className="border p-2">Min</th>
-            <th className="border p-2">Max</th>
-            <th className="border p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ranges.map((r) => (
-            <tr key={r.id}>
-              <td className="border p-2">{r.test_type}</td>
-              <td className="border p-2">{r.parameter}</td>
-              <td className="border p-2">{r.min_value ?? "—"}</td>
-              <td className="border p-2">{r.max_value ?? "—"}</td>
-              <td className="border p-2 space-x-2">
-                <button onClick={() => handleEdit(r)} className="text-blue-600 hover:underline">
-                  Edit
-                </button>
-                <button onClick={() => handleDelete(r.id)} className="text-red-600 hover:underline">
-                  Delete
-                </button>
-              </td>
+      <div className="bg-white shadow rounded p-4">
+        <h3 className="text-lg font-semibold mb-2">📋 Current Ranges</h3>
+        <table className="w-full border">
+          <thead>
+            <tr className="bg-gray-100 text-left">
+              <th className="p-2 border">Test</th>
+              <th className="p-2 border">Min</th>
+              <th className="p-2 border">Max</th>
+              <th className="p-2 border">Units</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {ranges.map((range) => (
+              <tr key={range.id}>
+                <td className="p-2 border">{range.test_type}</td>
+                <td className="p-2 border">{range.min_value}</td>
+                <td className="p-2 border">{range.max_value}</td>
+                <td className="p-2 border">{range.units}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
-};
+}
 
 export default ReferenceRangeManager;

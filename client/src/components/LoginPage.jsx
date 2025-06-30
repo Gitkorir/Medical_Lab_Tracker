@@ -9,37 +9,42 @@ const LoginPage = ({ onLoginSuccess }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post("/auth/login", { email, password });
+      const res = await api.post("/auth/login", {
+        email,
+        password,
+      });
       const token = res.data.access_token;
+      // ✅ Store full "Bearer <token>" string
       localStorage.setItem("token", `Bearer ${token}`);
-      onLoginSuccess(); // callback to redirect or show dashboard
+      onLoginSuccess(); // notify App that login succeeded
     } catch (err) {
-      setErrorMsg("Login failed. Please check your credentials.");
+      console.error("Login error:", err);
+      setErrorMsg("Invalid credentials or server error.");
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-16 p-6 border rounded shadow">
-      <h2 className="text-xl font-bold mb-4">🔐 Login</h2>
-      {errorMsg && <p className="text-red-600">{errorMsg}</p>}
+    <div className="max-w-md mx-auto mt-20 border p-6 rounded shadow">
+      <h2 className="text-xl font-bold mb-4 text-center">🧑‍⚕️ Login</h2>
+      {errorMsg && <p className="text-red-500 mb-2">{errorMsg}</p>}
       <form onSubmit={handleLogin} className="space-y-4">
         <input
           type="email"
-          className="border w-full p-2 rounded"
           placeholder="Email"
+          className="w-full border p-2 rounded"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
         />
         <input
           type="password"
-          className="border w-full p-2 rounded"
           placeholder="Password"
+          className="w-full border p-2 rounded"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <button type="submit" className="bg-blue-600 text-white w-full p-2 rounded">
+        <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
           Login
         </button>
       </form>
