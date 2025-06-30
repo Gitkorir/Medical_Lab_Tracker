@@ -1,4 +1,4 @@
-from server.app.models.test_reference_range import TestReferenceRange
+from ..models.test_reference_range import TestReferenceRange
 
 def flag_abnormal(test_type, values):
     flagged = False
