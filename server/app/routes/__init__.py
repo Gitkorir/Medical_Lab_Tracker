@@ -15,4 +15,4 @@ def register_routes(app):
     # Optional: Add a health check route
     @app.route('/health')
     def health_check():
-        return {"status": "ok", "message": "Medical Lab Tracker API is running"}, 200
+        return {"status": "ok", "message": "Medical Lab Tracker API is running"}, 200 
