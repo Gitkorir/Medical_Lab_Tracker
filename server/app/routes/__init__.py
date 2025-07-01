@@ -17,14 +17,14 @@ def register_routes(app):
     def health_check():
         return {"status": "ok", "message": "Medical Lab Tracker API is running"}, 200 
 
-    # --- TEMPORARY: Migration trigger endpoint ---
-    # UNCOMMENT to run migrations on Render free plan, then COMMENT OUT or remove for security!
-    from flask_migrate import upgrade
-    from app.extensions import db
-    @app.route('/run-migrations')
-    def run_migrations():
-        try:
-            upgrade()
-            return {"message": "Migrations applied successfully."}, 200
-        except Exception as e:
-            return {"error": str(e)}, 500
+    # # --- TEMPORARY: Migration trigger endpoint ---
+    # # UNCOMMENT to run migrations on Render free plan, then COMMENT OUT or remove for security!
+    # from flask_migrate import upgrade
+    # from app.extensions import db
+    # @app.route('/run-migrations')
+    # def run_migrations():
+    #     try:
+    #         upgrade()
+    #         return {"message": "Migrations applied successfully."}, 200
+    #     except Exception as e:
+    #         return {"error": str(e)}, 500
