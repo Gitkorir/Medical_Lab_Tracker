@@ -13,6 +13,7 @@ def register_routes(app):
     app.register_blueprint(reference_bp, url_prefix='/reference_ranges')
     app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
     
+    
     # Optional: Add a health check route
     @app.route('/health')
     def health_check():
