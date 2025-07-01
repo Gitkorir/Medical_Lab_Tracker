@@ -13,7 +13,7 @@ const ReferenceRangeManager = () => {
   // Data state
   const [ranges, setRanges] = useState([]);
   const [editingId, setEditingId] = useState(null);
-  
+
   // UI state
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -26,45 +26,53 @@ const ReferenceRangeManager = () => {
     page: 1,
     per_page: 20,
     total: 0,
-    pages: 0
+    pages: 0,
+    has_next: false,
+    has_prev: false,
   });
 
-  useEffect(() => {
-    fetchRanges();
-  }, [pagination.page, searchTerm]);
-
+  // Fetch reference ranges
   const fetchRanges = useCallback(async () => {
+    setLoading(true);
+    setErrors({});
+
+    // Clean params
+    const params = {};
+    if (typeof pagination.page === "number" && !isNaN(pagination.page)) params.page = pagination.page;
+    if (typeof pagination.per_page === "number" && !isNaN(pagination.per_page)) params.per_page = pagination.per_page;
+    if (searchTerm && typeof searchTerm === "string" && searchTerm.trim() !== "") params.parameter = searchTerm.trim();
+
+    console.log("DEBUG: Fetching reference ranges with params:", params);
+
     try {
-      setLoading(true);
-      setErrors({});
-      
-      const params = {
-        page: pagination.page,
-        per_page: pagination.per_page,
-        ...(searchTerm && { parameter: searchTerm })
-      };
-      
       const res = await api.get("/reference_ranges/", { params });
       setRanges(res.data.data);
       setPagination(prev => ({ ...prev, ...res.data.pagination }));
-      
     } catch (err) {
       console.error("❌ Error fetching reference ranges:", err);
-      setErrors({ fetch: "Failed to fetch reference ranges. Please try again." });
+      let msg = "Failed to fetch reference ranges. Please try again.";
+      if (err.response?.data?.error) msg = err.response.data.error;
+      setErrors({ fetch: msg });
     } finally {
       setLoading(false);
     }
   }, [pagination.page, pagination.per_page, searchTerm]);
 
+  useEffect(() => {
+    fetchRanges();
+    // eslint-disable-next-line
+  }, [pagination.page, pagination.per_page, searchTerm]);
+
+  // Form validation
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!form.parameter.trim()) newErrors.parameter = "Parameter is required";
     if (!form.units.trim()) newErrors.units = "Units are required";
-    
+
     const normalMin = parseFloat(form.normal_min);
     const normalMax = parseFloat(form.normal_max);
-    
+
     if (isNaN(normalMin) || normalMin < 0) {
       newErrors.normal_min = "Normal min must be a valid positive number";
     }
@@ -74,26 +82,28 @@ const ReferenceRangeManager = () => {
     if (!isNaN(normalMin) && !isNaN(normalMax) && normalMin >= normalMax) {
       newErrors.normal_max = "Normal max must be greater than normal min";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
-    
+
     // Clear field-specific error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
     }
   };
 
+  // Handle form submit (add or update)
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     const payload = {
       parameter: form.parameter.trim(),
       normal_min: parseFloat(form.normal_min),
@@ -104,7 +114,7 @@ const ReferenceRangeManager = () => {
     try {
       setSubmitting(true);
       setErrors({});
-      
+
       if (editingId) {
         await api.put(`/reference_ranges/${editingId}`, payload);
         setSuccessMessage("Reference range updated successfully!");
@@ -113,13 +123,12 @@ const ReferenceRangeManager = () => {
         await api.post("/reference_ranges/", payload);
         setSuccessMessage("Reference range added successfully!");
       }
-      
+
       resetForm();
       fetchRanges();
-      
     } catch (err) {
       console.error("❌ Error saving range:", err);
-      
+
       if (err.response?.data?.details) {
         setErrors(err.response.data.details);
       } else if (err.response?.data?.error) {
@@ -132,6 +141,7 @@ const ReferenceRangeManager = () => {
     }
   };
 
+  // Handle edit
   const handleEdit = (range) => {
     setForm({
       parameter: range.parameter,
@@ -144,11 +154,12 @@ const ReferenceRangeManager = () => {
     setSuccessMessage("");
   };
 
+  // Handle delete
   const handleDelete = async (id, parameter) => {
     if (!window.confirm(`Are you sure you want to delete the reference range for ${parameter}?`)) {
       return;
     }
-    
+
     try {
       await api.delete(`/reference_ranges/${id}`);
       setSuccessMessage("Reference range deleted successfully!");
@@ -159,6 +170,7 @@ const ReferenceRangeManager = () => {
     }
   };
 
+  // Reset form
   const resetForm = () => {
     setForm({
       parameter: "",
@@ -170,6 +182,7 @@ const ReferenceRangeManager = () => {
     setErrors({});
   };
 
+  // Handle search change
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
     setPagination(prev => ({ ...prev, page: 1 }));
