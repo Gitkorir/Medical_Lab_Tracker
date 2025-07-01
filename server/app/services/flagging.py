@@ -1,16 +1,20 @@
-# Example flag_abnormal function
-REFERENCE_RANGES = {
-    "Hemoglobin": {"min": 13.0, "max": 17.0},  # Example, adjust as needed
-    # Add other parameters here
-}
+from ..models.test_reference_range import TestReferenceRange
 
-def flag_abnormal(parameter, values):
-    # Assume values is a dict like {"value": 13.5}
-    ref = REFERENCE_RANGES.get(parameter)
+def get_result_status(parameter, values):
+    ref = TestReferenceRange.query.filter_by(parameter=parameter).first()
     if not ref:
-        return False  # Or True if you want to flag unknowns
+        return "Unknown"
     try:
         val = float(values.get("value"))
-        return val < ref["min"] or val > ref["max"]
+        if val < ref.normal_min:
+            return "Low"
+        elif val > ref.normal_max:
+            return "High"
+        else:
+            return "Normal"
     except Exception:
-        return False
+        return "Unknown"
+    
+def flag_abnormal(parameter, values):
+    status = get_result_status(parameter, values)
+    return status != "Normal"    
