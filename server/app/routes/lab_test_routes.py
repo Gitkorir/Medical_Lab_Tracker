@@ -55,3 +55,22 @@ def create_test():
         "msg": "Test recorded",
         "flagged": is_flagged
     }), 201
+
+
+@lab_test_bp.route('/', methods=['GET'])
+@jwt_required()
+def get_all_tests():
+    tests = LabTest.query.order_by(LabTest.id.desc()).all()
+    results = []
+    for t in tests:
+        patient = Patient.query.get(t.patient_id)
+        results.append({
+            "id": t.id,
+            "parameter": t.parameter,
+            "result_values": t.result_values,
+            "flagged": t.flagged,
+            "date_conducted": t.date_conducted,
+            "patient_id": t.patient_id,
+            "patient_name": patient.name if patient else ""
+        })
+    return jsonify(results), 200
