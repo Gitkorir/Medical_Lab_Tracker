@@ -18,7 +18,7 @@ const RegisterForm = ({ onBack, onRegisterSuccess }) => {
       return;
     }
     try {
-      await api.post("/auth/register", { name, email, password });
+      await api.post("/api/auth/register", { name, email, password });
       setSuccess("Registration successful! You can log in.");
       setTimeout(() => {
         setSuccess("");
@@ -102,7 +102,7 @@ const LoginPage = ({ onLoginSuccess }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post("/auth/login", {
+      const res = await api.post("/api/auth/login", {
         email,
         password,
       });

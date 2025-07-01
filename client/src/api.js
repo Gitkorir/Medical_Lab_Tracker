@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:5000",
+  baseURL: process.env.REACT_APP_API_BASE_URL || "https://medical-lab-tracker.onrender.com/",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
