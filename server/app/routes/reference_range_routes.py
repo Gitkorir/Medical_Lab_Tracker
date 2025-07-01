@@ -1,38 +1,36 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
 from ..extensions import db
 from ..models.test_reference_range import TestReferenceRange
 
 reference_bp = Blueprint('reference_ranges', __name__)
 
-# ✅ MAKE AUTHENTICATION OPTIONAL FOR TESTING
-@reference_bp.route("/", methods=["GET"])
+@reference_bp.route("/", methods=["GET", "POST"])
 @jwt_required(optional=True)
-def get_reference_ranges():
-    try:
-        page = request.args.get('page', 1, type=int)
-        per_page = min(request.args.get('per_page', 20, type=int), 100)
+def reference_ranges_collection():
+    if request.method == "GET":
+        # List with pagination and optional search
+        try:
+            page = int(request.args.get('page', 1))
+            per_page = int(request.args.get('per_page', 20))
+            if page < 1 or per_page < 1 or per_page > 100:
+                raise ValueError
+        except (ValueError, TypeError):
+            return jsonify({"error": "Query parameters 'page' and 'per_page' must be positive integers, per_page max is 100."}), 422
+
         parameter = request.args.get('parameter', type=str)
-
-        # Start with base query
         query = TestReferenceRange.query
-
-        # Filter by parameter if provided
         if parameter:
             query = query.filter(TestReferenceRange.parameter.ilike(f"%{parameter}%"))
-
-        # Paginate results
         ranges = query.paginate(page=page, per_page=per_page, error_out=False)
 
-        result = []
-        for r in ranges.items:
-            result.append({
-                "id": r.id,
-                "parameter": r.parameter,
-                "normal_min": r.normal_min,
-                "normal_max": r.normal_max,
-                "units": r.units
-            })
+        result = [{
+            "id": r.id,
+            "parameter": r.parameter,
+            "normal_min": r.normal_min,
+            "normal_max": r.normal_max,
+            "units": r.units
+        } for r in ranges.items]
 
         return jsonify({
             "data": result,
@@ -46,51 +44,81 @@ def get_reference_ranges():
             }
         }), 200
 
-    except Exception as e:
-        print(f"Reference range error: {str(e)}")
-        return jsonify({"error": "Failed to fetch reference ranges"}), 500
+    elif request.method == "POST":
+        # Create new
+        try:
+            data = request.get_json()
+            required = ["parameter", "normal_min", "normal_max", "units"]
+            missing = [f for f in required if f not in data or data[f] in [None, ""]]
+            if missing:
+                return jsonify({"error": f"Missing fields: {', '.join(missing)}"}), 400
+            new_range = TestReferenceRange(
+                parameter=data["parameter"].strip(),
+                normal_min=float(data["normal_min"]),
+                normal_max=float(data["normal_max"]),
+                units=data["units"].strip()
+            )
+            db.session.add(new_range)
+            db.session.commit()
+            return jsonify({
+                "message": "Reference range added",
+                "data": {
+                    "id": new_range.id,
+                    "parameter": new_range.parameter,
+                    "normal_min": new_range.normal_min,
+                    "normal_max": new_range.normal_max,
+                    "units": new_range.units
+                }
+            }), 201
+        except Exception as e:
+            print(f"Reference range POST error: {str(e)}")
+            return jsonify({"error": "Failed to add reference range"}), 500
 
-@reference_bp.route("/", methods=["POST"])
+@reference_bp.route("/<int:range_id>", methods=["GET", "PUT", "DELETE"])
 @jwt_required(optional=True)
-def add_reference_range():
-    try:
-        data = request.get_json()
+def reference_range_item(range_id):
+    range_obj = TestReferenceRange.query.get(range_id)
+    if not range_obj:
+        return jsonify({"error": "Reference range not found"}), 404
 
-        required_fields = ["parameter", "normal_min", "normal_max", "units"]
-        missing_fields = [f for f in required_fields if f not in data or data[f] in [None, ""]]
-
-        if missing_fields:
-            return jsonify({"error": f"Missing fields: {', '.join(missing_fields)}"}), 400
-
-        new_range = TestReferenceRange(
-            parameter=data["parameter"].strip(),
-            normal_min=float(data["normal_min"]),
-            normal_max=float(data["normal_max"]),
-            units=data["units"].strip()
-        )
-        
-        db.session.add(new_range)
-        db.session.commit()
-        
+    if request.method == "GET":
+        # Get by ID
         return jsonify({
-            "message": "Reference range added", 
-            "id": new_range.id,
-            "data": {
-                "id": new_range.id,
-                "parameter": new_range.parameter,
-                "normal_min": new_range.normal_min,
-                "normal_max": new_range.normal_max,
-                "units": new_range.units
-            }
-        }), 201
+            "id": range_obj.id,
+            "parameter": range_obj.parameter,
+            "normal_min": range_obj.normal_min,
+            "normal_max": range_obj.normal_max,
+            "units": range_obj.units
+        }), 200
 
-    except ValueError:
-        return jsonify({"error": "normal_min and normal_max must be numbers"}), 400
-    except Exception as e:
-        print(f"Add reference range error: {str(e)}")  # For debugging
-        return jsonify({"error": "Failed to add reference range"}), 500
+    elif request.method == "PUT":
+        # Update
+        try:
+            data = request.get_json()
+            for field in ["parameter", "normal_min", "normal_max", "units"]:
+                if field in data and data[field] not in [None, ""]:
+                    setattr(range_obj, field, data[field].strip() if isinstance(data[field], str) else float(data[field]))
+            db.session.commit()
+            return jsonify({
+                "message": "Reference range updated",
+                "data": {
+                    "id": range_obj.id,
+                    "parameter": range_obj.parameter,
+                    "normal_min": range_obj.normal_min,
+                    "normal_max": range_obj.normal_max,
+                    "units": range_obj.units
+                }
+            }), 200
+        except Exception as e:
+            print(f"Reference range PUT error: {str(e)}")
+            return jsonify({"error": "Failed to update reference range"}), 500
 
-# ✅ ADD: Test endpoint
-@reference_bp.route("/test", methods=["GET"])
-def test_reference_ranges():
-    return jsonify({"message": "Reference ranges endpoint is working!", "status": "ok"}), 200
+    elif request.method == "DELETE":
+        # Delete
+        try:
+            db.session.delete(range_obj)
+            db.session.commit()
+            return jsonify({"message": "Reference range deleted"}), 200
+        except Exception as e:
+            print(f"Reference range DELETE error: {str(e)}")
+            return jsonify({"error": "Failed to delete reference range"}), 500
