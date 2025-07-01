@@ -11,7 +11,12 @@ def register_routes(app):
     app.register_blueprint(lab_test_bp, url_prefix='/api/tests')
     app.register_blueprint(reference_bp, url_prefix='/api/reference_ranges')
     app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
+    
+    from flask_migrate import upgrade
 
+    @app.before_first_request
+    def run_migrations():
+     upgrade()
     # Optional: Add a health check route
     @app.route('/health')
     def health_check():
