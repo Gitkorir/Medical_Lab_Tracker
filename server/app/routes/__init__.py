@@ -14,9 +14,6 @@ def register_routes(app):
     
     from flask_migrate import upgrade
 
-    @app.before_first_request
-    def run_migrations():
-     upgrade()
     # Optional: Add a health check route
     @app.route('/health')
     def health_check():
