@@ -45,5 +45,7 @@ def create_app():
             response.headers.add('Access-Control-Allow-Headers', "*")
             response.headers.add('Access-Control-Allow-Methods', "*")
             return response
+        
+       
 
     return app
