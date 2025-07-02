@@ -2,29 +2,40 @@ import React, { useState } from "react";
 import api from "../api";
 
 export default function AddPatientModal({ onPatientAdded, onCancel }) {
-  const [name, setName] = useState("");
-  const [dob, setDob] = useState("");
-  const [gender, setGender] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    dob: "",
+    gender: "",
+  });
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Unified change handler
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setMessage("");
+    setLoading(true);
 
     try {
       const token = localStorage.getItem("token");
       const res = await api.post(
-        "/patients/",
-        { name, dob, gender },
+        "/api/patients/", // ensure this matches your backend prefix!
+        form,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessage("Patient added successfully!");
-      setName("");
-      setDob("");
-      setGender("");
-      if (onPatientAdded) onPatientAdded(res.data.data); // .data.data for your backend
+      setForm({ name: "", dob: "", gender: "" });
+      if (onPatientAdded) onPatientAdded(res.data.data || res.data); // fallback if backend returns differently
       window.dispatchEvent(new Event("dashboardUpdate"));
     } catch (err) {
       setError(
@@ -32,6 +43,8 @@ export default function AddPatientModal({ onPatientAdded, onCancel }) {
         err.response?.data?.error ||
         "Failed to add patient"
       );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -41,18 +54,40 @@ export default function AddPatientModal({ onPatientAdded, onCancel }) {
         <form className="add-patient-form-card" onSubmit={handleSubmit}>
           <h3 className="form-title">Add New Patient</h3>
           <div className="form-group">
-            <label>Name
-              <input className="form-input" value={name} onChange={e => setName(e.target.value)} required />
+            <label>
+              Name
+              <input
+                className="form-input"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                required
+              />
             </label>
           </div>
           <div className="form-group">
-            <label>Date of Birth
-              <input className="form-input" type="date" value={dob} onChange={e => setDob(e.target.value)} required />
+            <label>
+              Date of Birth
+              <input
+                className="form-input"
+                type="date"
+                name="dob"
+                value={form.dob}
+                onChange={handleChange}
+                required
+              />
             </label>
           </div>
           <div className="form-group">
-            <label>Gender
-              <select className="form-input" value={gender} onChange={e => setGender(e.target.value)} required>
+            <label>
+              Gender
+              <select
+                className="form-input"
+                name="gender"
+                value={form.gender}
+                onChange={handleChange}
+                required
+              >
                 <option value="">--Select--</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
@@ -63,8 +98,21 @@ export default function AddPatientModal({ onPatientAdded, onCancel }) {
           {error && <div className="form-error">{error}</div>}
           {message && <div className="form-success">{message}</div>}
           <div className="form-actions">
-            <button type="submit" className="form-submit-btn">Add Patient</button>
-            <button type="button" className="form-cancel-btn" onClick={onCancel}>Cancel</button>
+            <button
+              type="submit"
+              className="form-submit-btn"
+              disabled={loading}
+            >
+              {loading ? "Adding..." : "Add Patient"}
+            </button>
+            <button
+              type="button"
+              className="form-cancel-btn"
+              onClick={onCancel}
+              disabled={loading}
+            >
+              Cancel
+            </button>
           </div>
         </form>
       </div>

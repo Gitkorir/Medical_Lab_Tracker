@@ -36,20 +36,17 @@ const ReferenceRangeManager = () => {
     setLoading(true);
     setErrors({});
 
-    // Clean params
     const params = {};
     if (typeof pagination.page === "number" && !isNaN(pagination.page)) params.page = pagination.page;
     if (typeof pagination.per_page === "number" && !isNaN(pagination.per_page)) params.per_page = pagination.per_page;
     if (searchTerm && typeof searchTerm === "string" && searchTerm.trim() !== "") params.parameter = searchTerm.trim();
 
-    console.log("DEBUG: Fetching reference ranges with params:", params);
-
     try {
-      const res = await api.get("/reference_ranges/", { params });
-      setRanges(res.data.data);
+      // Use correct API prefix
+      const res = await api.get("/api/reference_ranges/", { params });
+      setRanges(res.data.data || []);
       setPagination(prev => ({ ...prev, ...res.data.pagination }));
     } catch (err) {
-      console.error("❌ Error fetching reference ranges:", err);
       let msg = "Failed to fetch reference ranges. Please try again.";
       if (err.response?.data?.error) msg = err.response.data.error;
       setErrors({ fetch: msg });
@@ -92,7 +89,6 @@ const ReferenceRangeManager = () => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
 
-    // Clear field-specific error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
     }
@@ -116,19 +112,17 @@ const ReferenceRangeManager = () => {
       setErrors({});
 
       if (editingId) {
-        await api.put(`/reference_ranges/${editingId}`, payload);
+        await api.put(`/api/reference_ranges/${editingId}`, payload);
         setSuccessMessage("Reference range updated successfully!");
         setEditingId(null);
       } else {
-        await api.post("/reference_ranges/", payload);
+        await api.post("/api/reference_ranges/", payload);
         setSuccessMessage("Reference range added successfully!");
       }
 
       resetForm();
       fetchRanges();
     } catch (err) {
-      console.error("❌ Error saving range:", err);
-
       if (err.response?.data?.details) {
         setErrors(err.response.data.details);
       } else if (err.response?.data?.error) {
@@ -161,11 +155,10 @@ const ReferenceRangeManager = () => {
     }
 
     try {
-      await api.delete(`/reference_ranges/${id}`);
+      await api.delete(`/api/reference_ranges/${id}`);
       setSuccessMessage("Reference range deleted successfully!");
       fetchRanges();
     } catch (err) {
-      console.error("❌ Error deleting range:", err);
       setErrors({ delete: "Failed to delete reference range. Please try again." });
     }
   };
@@ -440,4 +433,4 @@ const ReferenceRangeManager = () => {
   );
 };
 
-export default ReferenceRangeManager;
+export default ReferenceRangeManager; 

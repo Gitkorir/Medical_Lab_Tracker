@@ -10,12 +10,14 @@ export default function TestResultForm() {
   const [resultValue, setResultValue] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // Fetch patients on mount
   useEffect(() => {
     const fetchPatients = async () => {
       try {
-        const res = await api.get("/patients");
+        // Use correct API prefix
+        const res = await api.get("/api/patients/");
         setPatients(Array.isArray(res.data) ? res.data : []);
       } catch {
         setPatients([]);
@@ -36,24 +38,29 @@ export default function TestResultForm() {
     e.preventDefault();
     setMessage("");
     setError("");
+    setLoading(true);
 
     if (!selectedPatient) {
       setError("Please select a patient.");
+      setLoading(false);
       return;
     }
 
     const token = localStorage.getItem("token");
     if (!token) {
       setError("You must be logged in to add a test result.");
+      setLoading(false);
       return;
     }
 
     if (!parameter.trim()) {
       setError("Please enter the test parameter.");
+      setLoading(false);
       return;
     }
     if (!resultValue.trim()) {
       setError("Please enter the result value.");
+      setLoading(false);
       return;
     }
 
@@ -63,7 +70,8 @@ export default function TestResultForm() {
         parameter,
         result_values: { value: resultValue }
       };
-      await api.post("/tests/", payload, {
+      // Use correct API prefix
+      await api.post("/api/tests/", payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -83,6 +91,8 @@ export default function TestResultForm() {
       } else {
         setError("Network or server error.");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -112,6 +122,7 @@ export default function TestResultForm() {
                 type="button"
                 className="add-patient-btn"
                 onClick={() => setShowAddPatient(true)}
+                disabled={loading}
               >
                 + Add Patient
               </button>
@@ -127,6 +138,7 @@ export default function TestResultForm() {
               onChange={e => setParameter(e.target.value)}
               placeholder="e.g., Hemoglobin"
               required
+              disabled={loading}
             />
           </label>
         </div>
@@ -139,13 +151,14 @@ export default function TestResultForm() {
               onChange={e => setResultValue(e.target.value)}
               placeholder="e.g., 13.5"
               required
+              disabled={loading}
             />
           </label>
         </div>
         {error && <div className="form-error">{error}</div>}
         {message && <div className="form-success">{message}</div>}
-        <button type="submit" className="form-submit-btn">
-          Submit Result
+        <button type="submit" className="form-submit-btn" disabled={loading}>
+          {loading ? "Submitting..." : "Submit Result"}
         </button>
       </form>
       {showAddPatient && (
@@ -222,7 +235,11 @@ export default function TestResultForm() {
           font-weight: 500;
           transition: background 0.2s;
         }
-        .add-patient-btn:hover {
+        .add-patient-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        .add-patient-btn:hover:not(:disabled) {
           background: #e2e9ee;
         }
         .form-error {
@@ -247,7 +264,11 @@ export default function TestResultForm() {
           margin-top: 10px;
           transition: background 0.2s;
         }
-        .form-submit-btn:hover {
+        .form-submit-btn:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+        .form-submit-btn:hover:not(:disabled) {
           background: #137d37;
         }
         @media (max-width: 700px) {

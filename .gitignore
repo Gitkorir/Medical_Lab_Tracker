@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+ENV/
+.Python
+.server_env/
+.env
+# Pipenv
+Pipfile.lock
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
