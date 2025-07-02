@@ -43,7 +43,8 @@ const ReferenceRangeManager = () => {
 
     try {
       // Use correct API prefix
-      const res = await api.get("/api/reference_ranges/", { params });
+      const token = localStorage.getItem("token");
+      const res = await api.get("/api/reference_ranges/", { params, headers: token ? { Authorization: `Bearer ${token}` } : {} });
       setRanges(res.data.data || []);
       setPagination(prev => ({ ...prev, ...res.data.pagination }));
     } catch (err) {
@@ -110,13 +111,15 @@ const ReferenceRangeManager = () => {
     try {
       setSubmitting(true);
       setErrors({});
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       if (editingId) {
-        await api.put(`/api/reference_ranges/${editingId}`, payload);
+        await api.put(`/api/reference_ranges/${editingId}`, payload, { headers });
         setSuccessMessage("Reference range updated successfully!");
         setEditingId(null);
       } else {
-        await api.post("/api/reference_ranges/", payload);
+        await api.post("/api/reference_ranges/", payload, { headers });
         setSuccessMessage("Reference range added successfully!");
       }
 
@@ -155,7 +158,9 @@ const ReferenceRangeManager = () => {
     }
 
     try {
-      await api.delete(`/api/reference_ranges/${id}`);
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await api.delete(`/api/reference_ranges/${id}`, { headers });
       setSuccessMessage("Reference range deleted successfully!");
       fetchRanges();
     } catch (err) {
@@ -433,4 +438,4 @@ const ReferenceRangeManager = () => {
   );
 };
 
-export default ReferenceRangeManager; 
+export default ReferenceRangeManager;

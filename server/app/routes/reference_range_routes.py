@@ -22,7 +22,10 @@ def reference_ranges_collection():
         query = TestReferenceRange.query
         if parameter:
             query = query.filter(TestReferenceRange.parameter.ilike(f"%{parameter}%"))
-        ranges = query.paginate(page=page, per_page=per_page, error_out=False)
+        try:
+            ranges = query.paginate(page=page, per_page=per_page, error_out=False)
+        except Exception as e:
+            return jsonify({"error": f"Failed to paginate: {str(e)}"}), 422
 
         result = [{
             "id": r.id,
@@ -47,15 +50,27 @@ def reference_ranges_collection():
     elif request.method == "POST":
         # Create new
         try:
-            data = request.get_json()
+            data = request.get_json(force=True)
             required = ["parameter", "normal_min", "normal_max", "units"]
             missing = [f for f in required if f not in data or data[f] in [None, ""]]
             if missing:
                 return jsonify({"error": f"Missing fields: {', '.join(missing)}"}), 400
+
+            # Validate numeric values
+            try:
+                normal_min = float(data["normal_min"])
+                normal_max = float(data["normal_max"])
+                if normal_min < 0 or normal_max < 0:
+                    return jsonify({"error": "normal_min and normal_max must be positive numbers."}), 422
+                if normal_min >= normal_max:
+                    return jsonify({"error": "normal_max must be greater than normal_min."}), 422
+            except (ValueError, TypeError):
+                return jsonify({"error": "normal_min and normal_max must be numbers."}), 422
+
             new_range = TestReferenceRange(
                 parameter=data["parameter"].strip(),
-                normal_min=float(data["normal_min"]),
-                normal_max=float(data["normal_max"]),
+                normal_min=normal_min,
+                normal_max=normal_max,
                 units=data["units"].strip()
             )
             db.session.add(new_range)
@@ -94,10 +109,29 @@ def reference_range_item(range_id):
     elif request.method == "PUT":
         # Update
         try:
-            data = request.get_json()
+            data = request.get_json(force=True)
+            updated = False
             for field in ["parameter", "normal_min", "normal_max", "units"]:
                 if field in data and data[field] not in [None, ""]:
-                    setattr(range_obj, field, data[field].strip() if isinstance(data[field], str) else float(data[field]))
+                    value = data[field]
+                    if field in ["normal_min", "normal_max"]:
+                        try:
+                            value = float(value)
+                            if value < 0:
+                                return jsonify({"error": f"{field} must be a positive number."}), 422
+                        except (ValueError, TypeError):
+                            return jsonify({"error": f"{field} must be a number."}), 422
+                        setattr(range_obj, field, value)
+                    else:
+                        setattr(range_obj, field, value.strip())
+                    updated = True
+            if not updated:
+                return jsonify({"error": "No valid fields to update."}), 400
+
+            # Validation: normal_min < normal_max
+            if range_obj.normal_min >= range_obj.normal_max:
+                return jsonify({"error": "normal_max must be greater than normal_min."}), 422
+
             db.session.commit()
             return jsonify({
                 "message": "Reference range updated",
