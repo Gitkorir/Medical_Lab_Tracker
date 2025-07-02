@@ -106,6 +106,7 @@ const ReferenceRangeManager = () => {
       normal_min: parseFloat(form.normal_min),
       normal_max: parseFloat(form.normal_max),
       units: form.units.trim(),
+      subject: "Reference Range"
     };
 
     try {
