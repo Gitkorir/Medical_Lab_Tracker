@@ -4,10 +4,10 @@ from ..extensions import db
 from ..models.patient import Patient
 from ..models.lab_test import LabTest
 
-patient_bp = Blueprint('patient', __name__)
+patient_bp = Blueprint("patient", __name__)
 
-# ✅ GET: List patients (optionally filtered by user), with test/abnormal counts
-@patient_bp.route('/', methods=['GET'])
+# GET: List patients (optionally filtered by user), with test/abnormal counts
+@patient_bp.route("/", methods=["GET"])
 @jwt_required(optional=True)
 def get_patients():
     try:
@@ -27,9 +27,9 @@ def get_patients():
                 "name": p.name,
                 "dob": str(p.dob),
                 "gender": p.gender,
-                "created_by": getattr(p, 'created_by', None),
+                "created_by": getattr(p, "created_by", None),
                 "test_count": len(tests),
-                "abnormal_count": abnormal_count
+                "abnormal_count": abnormal_count,
             })
 
         return jsonify(result), 200
@@ -38,12 +38,12 @@ def get_patients():
         print(f"Get patients error: {str(e)}")
         return jsonify({"error": "Failed to fetch patients"}), 500
 
-# ✅ POST: Create new patient
-@patient_bp.route('/', methods=['POST'])
+# POST: Create new patient
+@patient_bp.route("/", methods=["POST"])
 @jwt_required(optional=True)
 def create_patient():
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         name = data.get("name")
         dob = data.get("dob")
         gender = data.get("gender")
@@ -79,8 +79,8 @@ def create_patient():
         print(f"Create patient error: {str(e)}")
         return jsonify({"error": "Failed to create patient"}), 500
 
-# ✅ GET: One patient by ID, with test/abnormal counts
-@patient_bp.route('/<int:patient_id>', methods=['GET'])
+# GET: One patient by ID, with test/abnormal counts
+@patient_bp.route("/<int:patient_id>", methods=["GET"])
 @jwt_required()
 def get_patient(patient_id):
     user = get_jwt_identity()
@@ -104,13 +104,13 @@ def get_patient(patient_id):
         "abnormal_count": abnormal_count
     }), 200
 
-# ✅ PUT: Update a patient
-@patient_bp.route('/<int:patient_id>', methods=['PUT'])
+# PUT: Update a patient
+@patient_bp.route("/<int:patient_id>", methods=["PUT"])
 @jwt_required()
 def update_patient(patient_id):
     current_user = get_jwt_identity()
     user_id = current_user.get("id") if isinstance(current_user, dict) else current_user
-    data = request.get_json()
+    data = request.get_json() or {}
 
     patient = Patient.query.filter_by(id=patient_id, created_by=user_id).first()
     if not patient:
@@ -132,8 +132,8 @@ def update_patient(patient_id):
         }
     }), 200
 
-# ✅ DELETE: Remove a patient
-@patient_bp.route('/<int:patient_id>', methods=['DELETE'])
+# DELETE: Remove a patient
+@patient_bp.route("/<int:patient_id>", methods=["DELETE"])
 @jwt_required()
 def delete_patient(patient_id):
     current_user = get_jwt_identity()
@@ -148,7 +148,7 @@ def delete_patient(patient_id):
 
     return jsonify({"msg": f"Patient '{patient.name}' deleted successfully."}), 200
 
-# ✅ Optional test route
-@patient_bp.route('/test', methods=['GET'])
+# Optional test route
+@patient_bp.route("/test", methods=["GET"])
 def test_patients():
     return jsonify({"message": "Patients endpoint is working!", "status": "ok"})

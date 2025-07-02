@@ -5,16 +5,14 @@ from .reference_range_routes import reference_bp
 from .dashboard_routes import dashboard_bp
 
 def register_routes(app):
-    """Register all blueprint routes with the Flask app"""
+    """Register all blueprint routes with the Flask app."""
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(patient_bp, url_prefix='/api/patients')
     app.register_blueprint(lab_test_bp, url_prefix='/api/tests')
     app.register_blueprint(reference_bp, url_prefix='/api/reference_ranges')
     app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
-    
-    from flask_migrate import upgrade
 
-    # Optional: Add a health check route
+    # Health check route
     @app.route('/health')
     def health_check():
         return {"status": "ok", "message": "Medical Lab Tracker API is running"}, 200 

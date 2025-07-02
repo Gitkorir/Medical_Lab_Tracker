@@ -12,7 +12,8 @@ const RegisterForm = ({ onBack, onRegisterSuccess }) => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setError(""); setSuccess("");
+    setError("");
+    setSuccess("");
     if (password !== confirm) {
       setError("Passwords do not match.");
       return;

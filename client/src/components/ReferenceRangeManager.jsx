@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import api from "../api";
 
+const DEFAULT_PAGE = 1;
+const DEFAULT_PER_PAGE = 20;
+const MAX_PER_PAGE = 100;
+
 const ReferenceRangeManager = () => {
   // Form state
   const [form, setForm] = useState({
@@ -23,30 +27,44 @@ const ReferenceRangeManager = () => {
 
   // Pagination state
   const [pagination, setPagination] = useState({
-    page: 1,
-    per_page: 20,
+    page: DEFAULT_PAGE,
+    per_page: DEFAULT_PER_PAGE,
     total: 0,
     pages: 0,
     has_next: false,
     has_prev: false,
   });
 
+  // Sanitize and validate pagination before API call
+  const getSafePagination = () => {
+    let page = Number(pagination.page) || DEFAULT_PAGE;
+    let per_page = Number(pagination.per_page) || DEFAULT_PER_PAGE;
+    if (page < 1) page = DEFAULT_PAGE;
+    if (per_page < 1 || per_page > MAX_PER_PAGE) per_page = DEFAULT_PER_PAGE;
+    return { page, per_page };
+  };
+
   // Fetch reference ranges
   const fetchRanges = useCallback(async () => {
     setLoading(true);
     setErrors({});
 
-    const params = {};
-    if (typeof pagination.page === "number" && !isNaN(pagination.page)) params.page = pagination.page;
-    if (typeof pagination.per_page === "number" && !isNaN(pagination.per_page)) params.per_page = pagination.per_page;
-    if (searchTerm && typeof searchTerm === "string" && searchTerm.trim() !== "") params.parameter = searchTerm.trim();
+    const { page, per_page } = getSafePagination();
+    const params = { page, per_page };
+    if (searchTerm && typeof searchTerm === "string" && searchTerm.trim() !== "") {
+      params.parameter = searchTerm.trim();
+    }
 
     try {
-      // Use correct API prefix
       const token = localStorage.getItem("token");
       const res = await api.get("/api/reference_ranges/", { params, headers: token ? { Authorization: `Bearer ${token}` } : {} });
       setRanges(res.data.data || []);
-      setPagination(prev => ({ ...prev, ...res.data.pagination }));
+      setPagination(prev => ({
+        ...prev,
+        ...res.data.pagination,
+        page: res.data.pagination?.page || page,
+        per_page: res.data.pagination?.per_page || per_page,
+      }));
     } catch (err) {
       let msg = "Failed to fetch reference ranges. Please try again.";
       if (err.response?.data?.error) msg = err.response.data.error;
@@ -54,6 +72,7 @@ const ReferenceRangeManager = () => {
     } finally {
       setLoading(false);
     }
+  // eslint-disable-next-line
   }, [pagination.page, pagination.per_page, searchTerm]);
 
   useEffect(() => {
@@ -106,7 +125,6 @@ const ReferenceRangeManager = () => {
       normal_min: parseFloat(form.normal_min),
       normal_max: parseFloat(form.normal_max),
       units: form.units.trim(),
-      
     };
 
     try {
@@ -184,7 +202,7 @@ const ReferenceRangeManager = () => {
   // Handle search change
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setPagination(prev => ({ ...prev, page: DEFAULT_PAGE }));
   };
 
   // Auto-clear success message
@@ -194,6 +212,16 @@ const ReferenceRangeManager = () => {
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
+
+  // Pagination navigation
+  const handlePageChange = (delta) => {
+    setPagination(prev => {
+      let newPage = (prev.page || DEFAULT_PAGE) + delta;
+      if (newPage < 1) newPage = 1;
+      if (prev.pages && newPage > prev.pages) newPage = prev.pages;
+      return { ...prev, page: newPage };
+    });
+  };
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -416,14 +444,14 @@ const ReferenceRangeManager = () => {
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                    onClick={() => handlePageChange(-1)}
                     disabled={!pagination.has_prev}
                     className="px-3 py-1 border rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Previous
                   </button>
                   <button
-                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                    onClick={() => handlePageChange(1)}
                     disabled={!pagination.has_next}
                     className="px-3 py-1 border rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >

@@ -78,48 +78,48 @@ function PatientDashboard() {
 
   // List of patients, now with test and abnormal counts
   const renderPatients = () => (
-  <div className="modal-list">
-    <div className="modal-header">
-      <b>Patients List</b>
-      <button className="close-btn" onClick={() => setView("")}>✕</button>
-    </div>
-    {loading ? <div>Loading...</div> : error ? <div>{error}</div> : (
-      <table className="modal-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>DOB</th>
-            <th>Gender</th>
-            <th>Test Results</th>
-            <th>Abnormal</th>
-          </tr>
-        </thead>
-        <tbody>
-          {patients.length === 0 ? (
+    <div className="modal-list">
+      <div className="modal-header">
+        <b>Patients List</b>
+        <button className="close-btn" onClick={() => setView("")}>✕</button>
+      </div>
+      {loading ? <div>Loading...</div> : error ? <div>{error}</div> : (
+        <table className="modal-table">
+          <thead>
             <tr>
-              <td colSpan={5} style={{ textAlign: "center", color: "#888" }}>No patients found.</td>
+              <th>Name</th>
+              <th>DOB</th>
+              <th>Gender</th>
+              <th>Test Results</th>
+              <th>Abnormal</th>
             </tr>
-          ) : (
-            patients.map(p => (
-              <tr key={p.id} className={p.abnormal_count > 0 ? "flagged-row" : ""}>
-                <td>{p.name}</td>
-                <td>{p.dob}</td>
-                <td>{p.gender}</td>
-                <td>{p.test_count}</td>
-                <td>
-                  {p.abnormal_count > 0
-                    ? <span className="flagged-label">⚠️ {p.abnormal_count}</span>
-                    : <span className="normal-label">0</span>
-                  }
-                </td>
+          </thead>
+          <tbody>
+            {patients.length === 0 ? (
+              <tr>
+                <td colSpan={5} style={{ textAlign: "center", color: "#888" }}>No patients found.</td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    )}
-  </div>
-);
+            ) : (
+              patients.map(p => (
+                <tr key={p.id} className={p.abnormal_count > 0 ? "flagged-row" : ""}>
+                  <td>{p.name}</td>
+                  <td>{p.dob}</td>
+                  <td>{p.gender}</td>
+                  <td>{p.test_count}</td>
+                  <td>
+                    {p.abnormal_count > 0
+                      ? <span className="flagged-label">⚠️ {p.abnormal_count}</span>
+                      : <span className="normal-label">0</span>
+                    }
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
   // List of test results, with flagging
   const renderTestResults = (onlyAbnormal = false) => (
     <div className="modal-list">

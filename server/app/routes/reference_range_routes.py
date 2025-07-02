@@ -3,22 +3,32 @@ from flask_jwt_extended import jwt_required
 from ..extensions import db
 from ..models.test_reference_range import TestReferenceRange
 
-reference_bp = Blueprint('reference_ranges', __name__)
+reference_bp = Blueprint("reference_ranges", __name__)
+
+DEFAULT_PAGE = 1
+DEFAULT_PER_PAGE = 20
+MAX_PER_PAGE = 100
 
 @reference_bp.route("/", methods=["GET", "POST"])
 @jwt_required(optional=True)
 def reference_ranges_collection():
     if request.method == "GET":
-        # List with pagination and optional search
+        # List with pagination and optional search, robust defaults
         try:
-            page = int(request.args.get('page', 1))
-            per_page = int(request.args.get('per_page', 20))
-            if page < 1 or per_page < 1 or per_page > 100:
-                raise ValueError
+            page = int(request.args.get("page", DEFAULT_PAGE))
         except (ValueError, TypeError):
-            return jsonify({"error": "Query parameters 'page' and 'per_page' must be positive integers, per_page max is 100."}), 422
+            page = DEFAULT_PAGE
+        try:
+            per_page = int(request.args.get("per_page", DEFAULT_PER_PAGE))
+        except (ValueError, TypeError):
+            per_page = DEFAULT_PER_PAGE
 
-        parameter = request.args.get('parameter', type=str)
+        if page < 1:
+            page = DEFAULT_PAGE
+        if per_page < 1 or per_page > MAX_PER_PAGE:
+            per_page = DEFAULT_PER_PAGE
+
+        parameter = request.args.get("parameter", type=str)
         query = TestReferenceRange.query
         if parameter:
             query = query.filter(TestReferenceRange.parameter.ilike(f"%{parameter}%"))

@@ -17,7 +17,15 @@ export default function TestResultForm() {
     const fetchPatients = async () => {
       try {
         // Use correct API prefix
-        const res = await api.get("/api/patients/");
+        const token = localStorage.getItem("token");
+        const res = await api.get("/api/patients/", {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          params: {
+              page: 1,
+              per_page: 20,
+          },
+       });
+
         setPatients(Array.isArray(res.data) ? res.data : []);
       } catch {
         setPatients([]);

@@ -1,4 +1,4 @@
-from flask import Flask, request, make_response, jsonify
+from flask import Flask, jsonify
 from .config import Config
 from .extensions import db, migrate, jwt
 from .models import *  # Ensures models are imported during migration
@@ -11,43 +11,29 @@ def create_app():
 
     # Initialize extensions
     db.init_app(app)
-    # with app.app_context():
-    #  db.create_all()
     migrate.init_app(app, db)
     jwt.init_app(app)
 
-    # ✅ Proper CORS configuration
+    # CORS configuration
     CORS(
         app,
         origins=[
             "http://localhost:3000",
             "http://127.0.0.1:3000",
-            "https://medical-lab-tracker.netlify.app",   # add your Netlify frontend!
+            "https://medical-lab-tracker.netlify.app",
         ],
         supports_credentials=True,
         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        expose_headers=["Content-Range", "X-Content-Range"]
+        expose_headers=["Content-Range", "X-Content-Range"],
     )
 
-    # Register all routes (including API blueprints)
+    # Register blueprints/routes
     register_routes(app)
 
-    # ✅ Friendly root endpoint for health/status (avoids 404 on '/')
+    # Root endpoint - health check
     @app.route("/")
     def index():
         return jsonify({"status": "ok", "message": "Medical Lab Tracker API root"}), 200
-
-    # ✅ Handle preflight requests (CORS)
-    @app.before_request
-    def handle_preflight():
-        if request.method == "OPTIONS":
-            response = make_response()
-            response.headers.add("Access-Control-Allow-Origin", "*")
-            response.headers.add('Access-Control-Allow-Headers', "*")
-            response.headers.add('Access-Control-Allow-Methods', "*")
-            return response
-        
-       
 
     return app

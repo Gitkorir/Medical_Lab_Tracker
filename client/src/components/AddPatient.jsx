@@ -11,7 +11,6 @@ export default function AddPatientModal({ onPatientAdded, onCancel }) {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Unified change handler
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({
@@ -29,13 +28,13 @@ export default function AddPatientModal({ onPatientAdded, onCancel }) {
     try {
       const token = localStorage.getItem("token");
       const res = await api.post(
-        "/api/patients/", // ensure this matches your backend prefix!
+        "/api/patients/",
         form,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessage("Patient added successfully!");
       setForm({ name: "", dob: "", gender: "" });
-      if (onPatientAdded) onPatientAdded(res.data.data || res.data); // fallback if backend returns differently
+      if (onPatientAdded) onPatientAdded(res.data.data || res.data);
       window.dispatchEvent(new Event("dashboardUpdate"));
     } catch (err) {
       setError(

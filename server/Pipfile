@@ -5,13 +5,13 @@ name = "pypi"
 
 [packages]
 psycopg2-binary = "==2.9.7"
-flask-jwt-extended = "*"
 gunicorn = "*"
 python-dotenv = "*"
 flask-sqlalchemy = "*"
-flask-cors = "*"
 flask-migrate = "*"
 flask = "*"
+flask-cors = "*"
+flask-jwt-extended = "*"
 
 [dev-packages]
 

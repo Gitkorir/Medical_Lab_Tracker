@@ -25,12 +25,19 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
-      console.error("API Error:", error.response.data);
+      // Log status, message, and the data payload
+      console.error("API Error:", {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        url: error.config.url,
+        data: error.response.data,
+      });
     } else {
       console.error("API Error:", error.message);
     }
     return Promise.reject(error);
   }
 );
+
 
 export default api;

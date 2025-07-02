@@ -16,7 +16,7 @@ export default function RegisterForm({ onBack }) {
       setError("Passwords do not match."); return;
     }
     try {
-      await api.post("/auth/register", { name, email, password });
+      await api.post("/api/auth/register", { name, email, password });
       setSuccess("Registration successful! You can log in.");
       setTimeout(onBack, 1300);
     } catch (err) {
