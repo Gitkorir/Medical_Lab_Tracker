@@ -19,55 +19,57 @@ function RegistrationPage() {
         const success = await register(name, email, password, role);
         if (success) {
             setMessage('Registration successful! You can now log in.');
-            // Optionally redirect to login page after successful registration
-            navigate('/login');
+            navigate('/login'); // Redirect to login page after successful registration
         } else {
             setError('Registration failed. Please try again.');
         }
     };
 
     return (
-        <div>
+        <div className="form-container">
             <h2>Register</h2>
             <form onSubmit={handleSubmit}>
-                <div>
-                    <label>Name:</label>
+                <div className="form-group">
+                    <label htmlFor="name">Name:</label>
                     <input
                         type="text"
+                        id="name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
                     />
                 </div>
-                <div>
-                    <label>Email:</label>
+                <div className="form-group">
+                    <label htmlFor="email">Email:</label>
                     <input
                         type="email"
+                        id="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
                     />
                 </div>
-                <div>
-                    <label>Password:</label>
+                <div className="form-group">
+                    <label htmlFor="password">Password:</label>
                     <input
                         type="password"
+                        id="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
                     />
                 </div>
-                <div>
-                    <label>Role:</label>
-                    <select value={role} onChange={(e) => setRole(e.target.value)}>
+                <div className="form-group">
+                    <label htmlFor="role">Role:</label>
+                    <select id="role" value={role} onChange={(e) => setRole(e.target.value)}>
                         <option value="user">User</option>
                         <option value="admin">Admin</option>
                         {/* Add other roles like 'lab_tech' as needed */}
                     </select>
                 </div>
-                {error && <p style={{ color: 'red' }}>{error}</p>}
-                {message && <p style={{ color: 'green' }}>{message}</p>}
-                <button type="submit">Register</button>
+                {error && <p className="form-error">{error}</p>}
+                {message && <p className="form-message">{message}</p>}
+                <button type="submit" className="form-button form-button-primary">Register</button>
             </form>
         </div>
     );

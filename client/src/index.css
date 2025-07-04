@@ -11,3 +11,297 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+body {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    color: #000;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    zoom: 01.8em;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Pseudo-element for background image with filter */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://imgs.search.brave.com/6-teH9cseS-__GDIrcgFaP0vB__4RcVsd5XA8ygw_Z8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4u/Y3JlYXRlLnZpc3Rh/LmNvbS9hcGkvbWVk/aWEvc21hbGwvMjcy/NzYwOTM0L3N0b2Nr/LXBob3RvLW1lZGlj/YWwtbGFib3JhdG9y/eS10ZXN0LXR1YmUt/aW4tY2hlbWlzdHJ5/LWJpb2xvZ3ktbGFi/LXRlc3Qtc2NpZQ');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    filter: brightness(50%);
+    z-index: -1; /* Ensure it stays behind content */
+}
+
+
+/* Dashboard Container (from previous styling, keep it) */
+.dashboard-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white background for readability */
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Dashboard Title */
+.dashboard-title {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #2c3e50;
+    border-bottom: 4px solid #3498db;
+    padding-bottom: 15px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+/* Welcome Message */
+.dashboard-welcome {
+    font-size: 3.1em;
+    color: #000;
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.dashboard-user-name {
+    font-weight: bold;
+    color: #3498db;
+}
+
+/* Summary Grid */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    justify-content: center;
+}
+
+/* Summary Card */
+.summary-card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 180px;
+}
+
+.summary-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+}
+
+/* Card Titles */
+.summary-card-title {
+    font-size: 1.6em;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 15px;
+}
+
+/* Summary Values */
+.summary-value {
+    font-size: 3.5em;
+    font-weight: bolder;
+    margin-top: 10px;
+}
+
+/* Icon Styling */
+.summary-icon {
+    margin-bottom: 15px;
+}
+
+/* Specific Colors for Icons and Values */
+.summary-icon-blue { color: #3498db; }
+.summary-value-blue { color: #2980b9; }
+
+.summary-icon-green { color: #27ae60; }
+.summary-value-green { color: #229954; }
+
+.summary-icon-red { color: #e74c3c; }
+.summary-value-red { color: #c0392b; }
+
+/* Conditional Styling for Abnormal Card */
+.summary-card-abnormal {
+    background-color: #fdeded; /* Light red background */
+    border-color: #e74c3c; /* Red border */
+}
+
+.summary-card-normal {
+    background-color: #e8f8f5; /* Light green background */
+    border-color: #27ae60; /* Green border */
+}
+
+/* No Data Message */
+.dashboard-no-data {
+    text-align: center;
+    color: #000;
+    font-size: 1.1em;
+    margin-top: 30px;
+}
+
+/* Footer Message */
+.dashboard-footer-message {
+    margin-top: 60px;
+    text-align: center;
+    color: #666;
+    font-size: 1em;
+}
+
+/* Loading and Error States */
+.dashboard-loading, .dashboard-error {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    font-size: 1.5em;
+    color: #555;
+}
+
+.dashboard-error {
+    color: #e74c3c;
+}
+
+/* General Form Container Styling */
+.form-container {
+    background-color: rgba(255, 255, 255, 0.95); /* Slightly transparent white background */
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    max-width: 500px; /* Max width for the form */
+    width: 90%; /* Responsive width */
+    margin: 50px auto; /* Center horizontally and add vertical margin */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center content within the form container */
+}
+
+/* Form Headings */
+.form-container h2 {
+    font-size: 2em;
+    color: #2c3e50;
+    margin-bottom: 25px;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+    width: 100%; /* Ensure heading spans full width */
+    text-align: center;
+}
+
+/* Form Group (label + input) */
+.form-group {
+    margin-bottom: 20px;
+    width: 100%; /* Ensure form groups take full width */
+}
+
+/* Labels */
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #333;
+    font-size: 1.1em;
+}
+
+/* Inputs and Selects */
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group input[type="date"],
+.form-group input[type="number"],
+.form-group select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    font-size: 1em;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    outline: none;
+}
+
+/* Buttons */
+.form-button {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin-top: 15px; /* Space above buttons */
+}
+
+.form-button-primary {
+    background-color: #3498db;
+    color: white;
+}
+
+.form-button-primary:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+}
+
+.form-button-secondary {
+    background-color: #6c757d;
+    color: white;
+    margin-left: 10px;
+}
+
+.form-button-secondary:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+}
+
+/* Error/Message Paragraphs */
+.form-error {
+    color: #e74c3c;
+    margin-top: 10px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.form-message {
+    color: #27ae60;
+    margin-top: 10px;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 600px) {
+    .form-container {
+        padding: 20px;
+        margin: 20px auto;
+    }
+    .form-container h2 {
+        font-size: 1.8em;
+    }
+    .form-group label {
+        font-size: 1em;
+    }
+    .form-button {
+        font-size: 1em;
+        padding: 10px 20px;
+    }
+}

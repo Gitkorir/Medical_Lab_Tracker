@@ -7,7 +7,7 @@ from ..models.lab_test import LabTest
 patient_bp = Blueprint("patient", __name__)
 
 # GET: List patients (optionally filtered by user), with test/abnormal counts
-@patient_bp.route("/", methods=["GET"])
+@patient_bp.route("", methods=["GET"])
 @jwt_required(optional=True)
 def get_patients():
     try:
@@ -39,7 +39,7 @@ def get_patients():
         return jsonify({"error": "Failed to fetch patients"}), 500
 
 # POST: Create new patient
-@patient_bp.route("/", methods=["POST"])
+@patient_bp.route("", methods=["POST"])
 @jwt_required(optional=True)
 def create_patient():
     try:

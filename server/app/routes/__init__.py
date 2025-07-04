@@ -3,7 +3,7 @@ from .patient_routes import patient_bp
 from .lab_test_routes import lab_test_bp
 from .reference_range_routes import reference_bp
 from .dashboard_routes import dashboard_bp
-
+from .user_routes import user_bp
 def register_routes(app):
     """Register all blueprint routes with the Flask app."""
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -11,7 +11,7 @@ def register_routes(app):
     app.register_blueprint(lab_test_bp, url_prefix='/api/tests')
     app.register_blueprint(reference_bp, url_prefix='/api/reference_ranges')
     app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
-
+    app.register_blueprint(user_bp, url_prefix='/api/users')
     # Health check route
     @app.route('/health')
     def health_check():

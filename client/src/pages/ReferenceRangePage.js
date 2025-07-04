@@ -96,7 +96,7 @@ function ReferenceRangePage() {
 
             {isAdmin ? (
                 <>
-                    <div style={{ marginBottom: '40px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
+                    <div style={{ marginBottom: '20px', padding: '20px', border: '1px solid #ddd',minHeight:'10px', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
                         <h3>Add New Reference Range</h3>
                         <form onSubmit={handleAddReferenceRange}>
                             <div style={formGroupStyle}>

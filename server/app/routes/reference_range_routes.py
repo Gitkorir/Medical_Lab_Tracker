@@ -9,7 +9,7 @@ DEFAULT_PAGE = 1
 DEFAULT_PER_PAGE = 20
 MAX_PER_PAGE = 100
 
-@reference_bp.route("/", methods=["GET", "POST"])
+@reference_bp.route("", methods=["GET", "POST"],strict_slashes=False)
 @jwt_required(optional=True)
 def reference_ranges_collection():
     if request.method == "GET":

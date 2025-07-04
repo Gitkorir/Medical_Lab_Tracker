@@ -21,32 +21,35 @@ function LoginPage() {
     };
 
     return (
-        <div>
+        <div className="form-container">
             <h2>Login</h2>
             <form onSubmit={handleSubmit}>
-                <div>
-                    <label>Email:</label>
+                <div className="form-group">
+                    <label htmlFor="email">Email:</label>
                     <input
                         type="email"
+                        id="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
                     />
                 </div>
-                <div>
-                    <label>Password:</label>
+                <div className="form-group">
+                    <label htmlFor="password">Password:</label>
                     <input
                         type="password"
+                        id="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
                     />
                 </div>
-                {error && <p style={{ color: 'red' }}>{error}</p>}
-                <button type="submit">Login</button>
+                {error && <p className="form-error">{error}</p>}
+                <button type="submit" className="form-button form-button-primary">Login</button>
             </form>
         </div>
     );
 }
+
 
 export default LoginPage;
